@@ -38,17 +38,13 @@ str = char(str');
 if nargin ==1; newfile=oldfile; end
 
 % First, deal with the ISOLatinEncoding, new based on Patrick Sturm's modifications
-[id1] = findstr(str,'/ISOLatin1Encoding');
-for i=1:length(id1)
-  str = strrep(str,'/ISOLatin1Encoding','/StandardEncoding');
-end
+str = strrep(str,'/ISOLatin1Encoding','/StandardEncoding');
            
 % Then, replace \32 with \275 to give the proper encoding for permil
 % It is possible this encoding changes over operating systems of MATLAB versions
-[id2]   = findstr(str, '\32');
-for i = 1:length(id2)
-str = strrep(str,'\32','\275');
-end
+before = '\32';
+after  = '\275';
+str = strrep(str,before,after);
 
 % write out the new file
 fid = fopen(newfile, 'w');
