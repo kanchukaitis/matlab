@@ -34,7 +34,7 @@ fid = fopen(oldfile,'r');
 str = fread(fid);
 str = char(str');
 
-% if only a single argument was passed, use the old filename as a the new filename
+% if only a single argument was passed, use the old filename as the new filename
 if nargin ==1; newfile=oldfile; end
 
 % First, deal with the ISOLatinEncoding, new based on Patrick Sturm's modifications
