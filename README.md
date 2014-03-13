@@ -11,3 +11,5 @@ fixpermil   - Automatically fixes the 'permil' notation in a Encapsulated Postsc
 gsbtest     - Implementation of the 'Gershunov test' for the significance of moving correlation functions
 
 shoemaker_f - Implementation of Shoemaker's F-test for equal variances
+
+makear4fig610c - Creates a plot of the IPCC AR4 Chapter 6 Figure 6.10c showing agreement contours for last millennium temperature reconstructions
