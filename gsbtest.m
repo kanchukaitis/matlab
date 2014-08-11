@@ -2,7 +2,7 @@ function [sd99,sd95,sd90,sd5,psig]=gsbtest(seriesLength,iters,window,seriesCorre
 
 % GSBTEST  'Gershunov' Test of Moving Correlation Significance Levels
 %              
-%      [sd99,sd95,sd90,sd5,pcrit]=gsbtest(sL,sN,window,R,method,pval)
+%       [sd99,sd95,sd90,sd5,psig]=gsbtest(seriesLength,iters,window,seriesCorrelation,method,obs)
 %
 % Implementation of a Monte Carlo type simulation of moving correlation functions 
 % between two weakly correlated white noise series for the purposes of constructing
@@ -128,10 +128,10 @@ sorted_mcf_var = sort(mcf_var');
 sorted_mcf_std = sort(mcf_std');
 
 % get the desired values
-sd99 = sorted_mcf_std(round(0.99 * seriesLength)); 
-sd95 = sorted_mcf_std(round(0.95 * seriesLength)); 
-sd90 = sorted_mcf_std(round(0.90 * seriesLength)); 
-sd5 =  sorted_mcf_std(round(0.05 * seriesLength));   
+sd99 = sorted_mcf_std(round(0.99 * iters)); 
+sd95 = sorted_mcf_std(round(0.95 * iters)); 
+sd90 = sorted_mcf_std(round(0.90 * iters)); 
+sd5 =  sorted_mcf_std(round(0.05 * iters));   
 
 % calculate the significance level for the observed, if passed as input
 if ~isempty(obs)
