@@ -34,7 +34,7 @@ function [output,newx,beta,debug] = quantile_mapping(rec,obs,nlls,fullSeries,nbo
 %
 
 % Notes (2/14): It is possible (likely) that this function provides different output than the R code in qmap, most likely due to different behavior in the interp1() in MATLAB vs
-% approx() from R. 
+% approx() from R.
 
 % a little bit of error checking
 if nargin <2
@@ -42,10 +42,10 @@ if nargin <2
     return
 end
 
-if size(rec,2)~= 2 | size(obs,2) ~= 2
-    disp('Size of rec or obs not as expected. Please be sure you provide a 2 column matrix with time in the first column and the data in the second')
-    return
-end
+% if size(rec,2)~= 2 | size(obs,2) ~= 2
+%     disp('Size of rec or obs not as expected. Please be sure you provide a 2 column matrix with time in the first column and the data in the second')
+%     return
+% end
 
 % now set some defaults
 if nargin < 7
@@ -55,11 +55,11 @@ end
 if nargin < 6 % automated common interval setting
     [commonYear,indx,jndx] = intersect(rec(:,1),obs(:,1));
     span = commonYear;
-    full_rec = rec(:,2);
+    full_rec = rec(:,2:end);
     rec = rec(indx,:);
     obs = obs(jndx,:);
 else
-    full_rec = rec(:,2);
+    full_rec = rec(:,2:end);
     [~,~,indx] = intersect(span,rec(:,1));
     rec = rec(indx,:);
     [~,~,jndx] = intersect(span,obs(:,1));
@@ -76,8 +76,8 @@ end
 
 %% start quantile mapping operations here
 % extract values from input
-y = obs(:,2);
-x = rec(:,2);
+y = obs(:,2:end);
+x = rec(:,2:end);
 
 % sort the observations and reconstructions
 ys = sort(y); % observations
@@ -87,39 +87,42 @@ xs = sort(x); % reconstruction
 newx = quantile(xs,prct); % value at every quantile in prct
 
 % preallocate the beta matrix
-beta = NaN(length(newx),2,nboot);
+beta = NaN(size(newx,1),size(newx,2),2,nboot);
 
 for j = 1:nboot % loop over bootstrap iterationss
     
     for i = 1:length(newx) % loop over quantile steps
         
-        if j==1 % no bootstrap or first bootstrap, use series as normal
-            xss = sort(xs);
-            yss = sort(ys);
-        else % bootstrap, draw with replacement from reconstruction
-            [xss,idx] = datasample(xs,length(xs),'Replace',true);
-            yss = ys(idx); % associated values from the observations
-            xss = sort(xss); % re-sort for safety
-            yss = sort(yss); % re-sort for safety
+        for k = 1:size(newx,2)
+            
+            if j==1 % no bootstrap or first bootstrap, use series as normal
+                xss = sort(xs(:,k));
+                yss = sort(ys(:,k));
+            else % bootstrap, draw with replacement from reconstruction                
+                [xss,idx] = datasample(xs(:,k),length(xs),'Replace',true);
+                yss = ys(idx,k); % associated values from the observations
+                xss = sort(xss); % re-sort for safety
+                yss = sort(yss); % re-sort for safety
+            end
+            
+            % this is a straight port of the R code from qmap, one way of identifying the k neighbors for the local regression
+            xc = xss - newx(i,k); mdist = sort(abs(xc)); mdist = mdist(nlls); ik = abs(xc) <= mdist;
+            xcs = [ones(length(xc(ik)),1) xc(ik)]; % these are the values in the neighborhood plus a column of ones
+            beta(i,k,1:2,j) = regress(yss(ik),xcs); % here, the regression of the sorted local values gives us an estimate of x in beta(:,1), a slope in beta(:,2)
         end
-        
-        % this is a straight port of the R code from qmap, one way of identifying the k neighbors for the local regression
-        xc = xss - newx(i); mdist = sort(abs(xc)); mdist = mdist(nlls); k = abs(xc) <= mdist;
-        xcs = [ones(length(xc(k)),1) xc(k)]; % these are the values in the neighborhood plus a column of ones
-        beta(i,1:2,j) = regress(yss(k),xcs); % here, the regression of the sorted local values gives us an estimate of x in beta(:,1), a slope in beta(:,2)
-        
     end
 end
 
 % average over the bootstrapped values
-beta = squeeze(nanmean(beta,3));
+beta = squeeze(nanmean(beta,4));
 
 if nargin<4
     fullSeries = full_rec; % you can use the series you put in for the fit, or you can use another series for the estimate
 end
 
-output = interp1(newx,beta(:,1),fullSeries,'linear','extrap');
-
+for k = 1:size(newx,2)
+    output(:,k) = interp1(newx(:,k),beta(:,k,1),fullSeries,'linear','extrap');
+end
 % for testing - extrapolation can actually miss extreme values in the paleoclimate record - in theory this could correct for that
 %outsideBounds = (output < min(newx) | output > max(newx));
 %output(outsideBounds) = fullSeries(outsideBounds);
